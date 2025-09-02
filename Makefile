@@ -4,17 +4,36 @@
 .PHONY: all health smoke bench accept test warmup install-service diag lint clean
 
 # Default target
-all: health
+all: setup
+
+# Setup environment (public-first)
+setup:
+	@echo "🐍 Setting up Mac VibeVoice environment..."
+	@python3 -m venv .venv
+	@. .venv/bin/activate && pip install -U pip wheel setuptools
+	@. .venv/bin/activate && pip install -r configs/requirements.txt
+	@. .venv/bin/activate && pip install huggingface_hub hf-transfer
+	@cd vendor/VibeVoice && ../../.venv/bin/pip install -e .
+	@echo "✅ Setup complete"
+
+# Download models
+download-1p5b:
+	@echo "📦 Downloading VibeVoice-1.5B (~6GB)..."
+	@. .venv/bin/activate && HF_HUB_ENABLE_HF_TRANSFER=1 python scripts/fetch_models.py 1.5B
+
+download-7b:
+	@echo "📦 Downloading VibeVoice-7B (~26GB)..."
+	@. .venv/bin/activate && HF_HUB_ENABLE_HF_TRANSFER=1 python scripts/fetch_models.py 7B
 
 # System health check
 health:
-	@./cli/vvctl health
+	@. .venv/bin/activate && ./cli/vvctl health
 
 # Quick smoke test
-smoke:
+smoke: 
 	@echo "🔥 Running smoke test..."
-	@./cli/vvctl health
-	@./cli/vvctl synth --model 1.5B --voice vendor/VibeVoice/demo/voices/en-Carter_man.wav --text "Smoke test" --seconds 3
+	@. .venv/bin/activate && ./cli/vvctl health
+	@. .venv/bin/activate && ./cli/vvctl synth --model 1.5B --voice vendor/VibeVoice/demo/voices/en-Carter_man.wav --text "Smoke test" --seconds 3
 	@echo "✅ Smoke test complete"
 
 # Performance benchmark

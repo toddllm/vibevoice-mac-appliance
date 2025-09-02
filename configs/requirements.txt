@@ -1,28 +1,37 @@
-# Mac VibeVoice Requirements
+# Mac VibeVoice Requirements (Public)
 # Pinned versions for stable Mac deployment
 
-torch==2.5.1
+# Core ML stack
+torch>=2.0.0
 transformers==4.51.3
 accelerate==1.6.0
 diffusers
+huggingface_hub>=0.20.0
+hf-transfer  # Fast downloads
+
+# Scientific computing
 numpy
 scipy
 librosa
 soundfile
 ml-collections
 absl-py
-gradio==4.44.1
-av==14.4.0
-aiortc==1.13.0
-flask==3.0.0
-flask-cors
-pydantic
-pyyaml
 
 # Audio processing
 pydub
 resampy
 
+# Web server
+flask>=2.0.0
+flask-cors
+
 # CLI utilities
-click
-rich
+click>=8.0.0
+rich>=12.0.0
+pyyaml
+
+# Optional gradio for demos
+gradio==4.44.1
+av==14.4.0
+aiortc==1.13.0
+pydantic

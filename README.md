@@ -2,38 +2,46 @@
 
 **Enterprise-grade, offline Text-to-Speech appliance for Apple Silicon**
 
-Transform your Mac into a boring, dependable TTS appliance with VibeVoice. Completely offline operation with zero impact on external training environments.
+Transform your Mac into a boring, dependable TTS appliance with VibeVoice. Works out-of-the-box with public models, then runs completely offline.
+
+> 💡 **Branch Note**: This branch downloads models from Hugging Face (no LAN required). For LAN+rsync optimization, see the [`lan-optimized`](../../tree/lan-optimized) branch.
 
 ## ✨ Features
 
-- 🔒 **Completely Offline** - No network dependency after model sync
+- 🔒 **Offline After Setup** - Downloads once, runs offline forever
 - ⚡ **Apple Silicon Optimized** - Native MPS acceleration for M1/M2/M3
 - 🎵 **Production Audio Quality** - 24kHz, -1dBFS normalized output
 - 🛡️ **Enterprise Hardened** - Golden path validation, atomic operations
 - 📊 **Self-Monitoring** - Comprehensive metrics and health checks
-- 🚀 **One-Command Setup** - Bootstrap script for clean installation
+- 🚀 **Out-of-Box Setup** - No external dependencies required
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Public)
 
 ```bash
 # 1. Clone with submodules
-git clone --recursive git@github.com:toddllm/vibevoice-mac-appliance.git
+git clone --recursive https://github.com/toddllm/vibevoice-mac-appliance.git
 cd vibevoice-mac-appliance
 
-# 2. Bootstrap environment
-./scripts/bootstrap.sh
+# 2. Setup environment
+make setup
 
-# 3. Sync models (requires access to model cache)
-./scripts/sync_hf_cache_from_toddllm.sh
+# 3. Download 1.5B model (~6GB)
+make download-1p5b
 
-# 4. Health check
-./cli/vvctl health
+# 4. Generate speech  
+make smoke
 
-# 5. Generate speech
+# 5. First synthesis
 ./cli/vvctl synth --model 1.5B --voice vendor/VibeVoice/demo/voices/en-Carter_man.wav --text "Hello Mac!" --seconds 5
+```
 
-# 6. Install as service (optional)
-make install-service
+### Optional: High-Quality 7B Model
+```bash
+# Download 7B model (~26GB) 
+make download-7b
+
+# Test 7B generation
+./cli/vvctl synth --model 7B --voice vendor/VibeVoice/demo/voices/en-Carter_man.wav --text "High quality test" --seconds 6
 ```
 
 ## 📋 Requirements
