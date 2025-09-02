@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.vibevoice.mac.local</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd ~/vibevoice-debugging && ./vvctl_final warmup --voice VibeVoice/demo/voices/en-Carter_man.wav && ./vvctl_final health && python production_server_hardened.py</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HF_HUB_OFFLINE</key>
+    <string>1</string>
+    <key>TRANSFORMERS_OFFLINE</key>
+    <string>1</string>
+    <key>TRANSFORMERS_NO_FLASH_ATTENTION</key>
+    <string>1</string>
+    <key>PYTORCH_ENABLE_MPS_FALLBACK</key>
+    <string>1</string>
+    <key>PYTORCH_MPS_HIGH_WATERMARK_RATIO</key>
+    <string>0.0</string>
+    <key>OMP_NUM_THREADS</key>
+    <string>8</string>
+    <key>VECLIB_MAXIMUM_THREADS</key>
+    <string>8</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>~/vibevoice-debugging/logs/server.out</string>
+  <key>StandardErrorPath</key>
+  <string>~/vibevoice-debugging/logs/server.err</string>
+  <key>WorkingDirectory</key>
+  <string>~/vibevoice-debugging</string>
+</dict>
+</plist>

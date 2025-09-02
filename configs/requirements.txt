@@ -1,0 +1,28 @@
+# Mac VibeVoice Requirements
+# Pinned versions for stable Mac deployment
+
+torch==2.5.1
+transformers==4.51.3
+accelerate==1.6.0
+diffusers
+numpy
+scipy
+librosa
+soundfile
+ml-collections
+absl-py
+gradio==4.44.1
+av==14.4.0
+aiortc==1.13.0
+flask==3.0.0
+flask-cors
+pydantic
+pyyaml
+
+# Audio processing
+pydub
+resampy
+
+# CLI utilities
+click
+rich

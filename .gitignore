@@ -1,0 +1,114 @@
+# VibeVoice Mac Appliance .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon*
+._*
+
+# Model cache and weights (never commit)
+.cache/
+*.safetensors
+*.bin
+models/
+checkpoints/
+
+# HuggingFace cache
+~/.cache/huggingface/
+.huggingface/
+
+# Audio files (except small golden references)
+*.wav
+*.mp3
+*.flac
+*.m4a
+out/
+temp/
+outputs/
+
+# Logs
+logs/
+*.log
+*.out
+*.err
+
+# Golden reference audio (use Git LFS if needed)
+golden/*.wav
+
+# Service files with local paths
+services/*.plist.local
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+cache/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Large files
+*.zip
+*.tar.gz
+*.tar.zst
+
+# Secrets and local config
+.env.local
+config.local.*
+*_local.py
+*_local.json
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Model artifacts
+model_cache/
+snapshots/
+blobs/

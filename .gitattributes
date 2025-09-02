@@ -1,0 +1,26 @@
+# Git LFS and file handling
+
+# Small golden reference audio samples (if any)
+golden/*.wav filter=lfs diff=lfs merge=lfs -text
+
+# Ensure shell scripts have proper line endings
+*.sh text eol=lf
+
+# Python files
+*.py text eol=lf
+
+# Configuration files
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+
+# Documentation
+*.md text eol=lf
+
+# Makefiles
+Makefile text eol=lf
+makefile text eol=lf
+
+# Ignore diff on generated files
+requirements.lock binary

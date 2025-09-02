@@ -1,0 +1,94 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibevoice-mac"
+version = "1.0.0"
+description = "Enterprise-grade VibeVoice TTS appliance for Apple Silicon"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "VibeVoice Mac Team", email = "noreply@example.com"}
+]
+keywords = ["text-to-speech", "tts", "apple-silicon", "macos", "voice-synthesis"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers", 
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+dependencies = [
+    "torch>=2.0.0",
+    "transformers==4.51.3",
+    "accelerate==1.6.0",
+    "diffusers",
+    "numpy",
+    "scipy", 
+    "librosa",
+    "soundfile",
+    "ml-collections",
+    "absl-py",
+    "flask>=2.0.0",
+    "flask-cors",
+    "click>=8.0.0",
+    "rich>=12.0.0",
+    "pyyaml"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0"
+]
+
+server = [
+    "gunicorn>=20.0.0",
+    "uvicorn>=0.20.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/toddllm/vibevoice-mac-appliance"
+Documentation = "https://github.com/toddllm/vibevoice-mac-appliance/blob/main/docs/"
+Repository = "https://github.com/toddllm/vibevoice-mac-appliance"
+"Bug Tracker" = "https://github.com/toddllm/vibevoice-mac-appliance/issues"
+
+[project.scripts]
+vvctl = "cli.vvctl_final:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cli*", "server*", "synth*", "configs*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "ISC", "ICN", "T10", "DJ", "RUF"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""
+Enhanced vvctl: Production Mac VibeVoice CLI
+
+Hardened CLI with validation, metrics, and quality control.
+"""
+
+import argparse
+import os
+import time
+import uuid
+import json
+import statistics
+import numpy as np
+import soundfile as sf
+import torch
+from datetime import datetime
+from pathlib import Path
+
+# Hardened environment
+ENV_VARS = {
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "TRANSFORMERS_NO_FLASH_ATTENTION": "1",
+    "PYTORCH_ENABLE_MPS_FALLBACK": "1", 
+    "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.0",
+    "OMP_NUM_THREADS": "8",
+    "VECLIB_MAXIMUM_THREADS": "8"
+}
+
+for key, value in ENV_VARS.items():
+    os.environ.setdefault(key, value)
+
+from hardened_synthesis import synthesize_with_validation, validate_model_availability
+from audio_qc import validate_voice_file
+
+def cmd_synth(args):
+    """Enhanced synthesis command with validation."""
+    print(f"🎙️  Mac VibeVoice Synthesis")
+    print(f"Model: {args.model}")
+    print(f"Duration: {args.seconds}s") 
+    print(f"Text: {args.text[:60]}...")
+    
+    # Generate output path
+    timestamp = int(time.time())
+    if hasattr(args, 'out') and args.out:
+        output_path = args.out
+    else:
+        os.makedirs("out", exist_ok=True)
+        output_path = f"out/{args.model.lower()}_{timestamp}.wav"
+    
+    # Generate request ID
+    request_id = str(uuid.uuid4())[:8]
+    
+    # Synthesize with full validation
+    result = synthesize_with_validation(
+        model_id=args.model,
+        text=args.text,
+        voice_path=args.voice,
+        seconds=args.seconds,
+        output_path=output_path,
+        request_id=request_id
+    )
+    
+    if result["success"]:
+        metrics = result["metrics"]
+        print(f"\n✅ SUCCESS! ({request_id})")
+        print(f"Saved: {output_path}")
+        print(f"Duration: {metrics['duration']:.2f}s")
+        print(f"Wall time: {metrics['wall_time']:.2f}s") 
+        print(f"RTF: {metrics['rtf']:.2f}x")
+        
+        if "put_count" in metrics:
+            print(f"Chunks: {metrics['chunk_count']} ({metrics['put_count']} put calls)")
+            if metrics.get("first_chunk_ms"):
+                print(f"First chunk: {metrics['first_chunk_ms']:.0f}ms")
+        
+        return 0
+    else:
+        print(f"\n❌ FAILED: {result['error']}")
+        return 1
+
+def cmd_health(args):
+    """Enhanced health check."""
+    print("🏥 Mac VibeVoice Health Check")
+    print("=" * 40)
+    
+    # Environment check
+    print("\n📋 Environment:")
+    for key in ["OMP_NUM_THREADS", "PYTORCH_ENABLE_MPS_FALLBACK"]:
+        value = os.environ.get(key, "unset")
+        print(f"  {key}: {value}")
+    
+    # Device capabilities
+    print("\n💻 Device:")
+    print(f"  MPS available: {torch.backends.mps.is_available()}")
+    print(f"  PyTorch version: {torch.__version__}")
+    
+    # Model validation
+    print("\n🤖 Models:")
+    for model_id in ["1.5B", "7B"]:
+        is_available = validate_model_availability(model_id)
+        status = "✅ Ready" if is_available else "❌ Missing"
+        print(f"  {model_id}: {status}")
+    
+    # Voice directory
+    print("\n🎤 Voices:")
+    voices_dir = Path("demo/voices")
+    if voices_dir.exists():
+        voices = list(voices_dir.glob("*.wav"))
+        print(f"  Available: {len(voices)}")
+        for voice in voices[:3]:  # Show first 3
+            print(f"    {voice.name}")
+        if len(voices) > 3:
+            print(f"    ... and {len(voices)-3} more")
+    else:
+        print("  Directory: Not found")
+    
+    # Output directory
+    print("\n📁 Output:")
+    out_dir = Path("out")
+    if out_dir.exists():
+        recent_files = sorted(out_dir.glob("*.wav"), key=lambda x: x.stat().st_mtime, reverse=True)
+        print(f"  Recent files: {len(recent_files)}")
+        for f in recent_files[:2]:
+            mtime = datetime.fromtimestamp(f.stat().st_mtime).strftime("%H:%M:%S")
+            size_kb = f.stat().st_size // 1024
+            print(f"    {f.name} ({size_kb}KB, {mtime})")
+    else:
+        print("  Directory: Not found")
+    
+    print("\n" + "=" * 40)
+    return 0
+
+def cmd_bench(args):
+    """Benchmark performance with statistics."""
+    print("📊 Mac VibeVoice Benchmark")
+    print(f"Iterations: {args.iters}")
+    print(f"Duration: {args.seconds}s each")
+    
+    results = []
+    
+    for i in range(args.iters):
+        print(f"\n--- Iteration {i+1}/{args.iters} ---")
+        
+        # Generate unique text
+        test_text = f"Benchmark iteration {i+1}. Testing performance and stability."
+        output_path = f"out/bench_{i+1}_{int(time.time())}.wav"
+        
+        result = synthesize_with_validation(
+            model_id="1.5B",  # Benchmark with working model
+            text=test_text,
+            voice_path=args.voice,
+            seconds=args.seconds,
+            output_path=output_path,
+            request_id=f"bench-{i+1}"
+        )
+        
+        if result["success"]:
+            results.append(result["metrics"])
+            metrics = result["metrics"]
+            print(f"✅ RTF: {metrics['rtf']:.3f}x, Duration: {metrics['duration']:.2f}s, Chunks: {metrics.get('chunk_count', 0)}")
+        else:
+            print(f"❌ Failed: {result['error']}")
+    
+    # Calculate statistics
+    if results:
+        print(f"\n📈 Benchmark Results ({len(results)} successful)")
+        print("=" * 50)
+        
+        metrics_to_analyze = ['wall_time', 'duration', 'rtf', 'chunk_count']
+        if 'first_chunk_ms' in results[0]:
+            metrics_to_analyze.append('first_chunk_ms')
+            
+        for metric in metrics_to_analyze:
+            values = [r[metric] for r in results if metric in r and r[metric] is not None]
+            if values:
+                p50 = statistics.median(values)
+                p95 = statistics.quantiles(values, n=20)[18] if len(values) >= 5 else max(values)
+                unit = "ms" if "ms" in metric else "x" if metric == "rtf" else "s" if "time" in metric else ""
+                print(f"  {metric}: p50={p50:.2f}{unit}, p95={p95:.2f}{unit}")
+        
+        print(f"\n🎯 Performance Summary:")
+        avg_rtf = statistics.mean(r['rtf'] for r in results)
+        print(f"  Average RTF: {avg_rtf:.3f}x ({'faster' if avg_rtf < 1.0 else 'slower'} than real-time)")
+        print(f"  Success rate: {len(results)}/{args.iters} ({len(results)/args.iters*100:.1f}%)")
+        
+        return 0
+    else:
+        print(f"\n❌ All benchmark iterations failed")
+        return 1
+
+def cmd_warmup(args):
+    """Warmup command to populate caches."""
+    print("🔥 Warming up Mac VibeVoice...")
+    
+    # Quick warmup synthesis
+    result = synthesize_with_validation(
+        model_id="1.5B",
+        text="Warmup test",
+        voice_path=args.voice,
+        seconds=1.0,
+        output_path="out/warmup.wav",
+        request_id="warmup"
+    )
+    
+    if result["success"]:
+        load_time = result["metrics"]["wall_time"]
+        print(f"✅ Warmup complete: {load_time:.2f}s")
+        print("🎯 Models and caches populated")
+        return 0
+    else:
+        print(f"❌ Warmup failed: {result['error']}")
+        return 1
+
+def main():
+    """Enhanced CLI main."""
+    parser = argparse.ArgumentParser(description="Mac VibeVoice Enhanced CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Commands")
+    
+    # Synth command
+    synth_parser = subparsers.add_parser("synth", help="Synthesize speech")
+    synth_parser.add_argument("--model", choices=["1.5B", "7B"], required=True)
+    synth_parser.add_argument("--voice", required=True, help="Voice WAV file") 
+    synth_parser.add_argument("--text", required=True, help="Text to synthesize")
+    synth_parser.add_argument("--seconds", type=float, default=6.0, help="Target duration")
+    synth_parser.add_argument("--out", help="Output file path")
+    synth_parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    
+    # Health command
+    health_parser = subparsers.add_parser("health", help="System health check")
+    
+    # Benchmark command  
+    bench_parser = subparsers.add_parser("bench", help="Performance benchmark")
+    bench_parser.add_argument("--iters", type=int, default=3, help="Iterations")
+    bench_parser.add_argument("--seconds", type=float, default=4.0, help="Duration per test")
+    bench_parser.add_argument("--voice", required=True, help="Voice file for testing")
+    
+    # Warmup command
+    warmup_parser = subparsers.add_parser("warmup", help="Warmup models and caches")
+    warmup_parser.add_argument("--voice", required=True, help="Voice file")
+    
+    args = parser.parse_args()
+    
+    if args.command == "synth":
+        return cmd_synth(args)
+    elif args.command == "health":
+        return cmd_health(args)
+    elif args.command == "bench":
+        return cmd_bench(args)
+    elif args.command == "warmup":
+        return cmd_warmup(args)
+    else:
+        parser.print_help()
+        return 1
+
+if __name__ == "__main__":
+    exit(main())
